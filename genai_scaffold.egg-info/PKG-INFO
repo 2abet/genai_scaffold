@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: genai_scaffold
-Version: 0.1.0
+Version: 0.1.1
 Summary: CLI tool to scaffold production-ready generative AI projects
 Author-email: Akinyemi Arabambi <yemiarabambi@gmail.com>
 License-File: LICENSE

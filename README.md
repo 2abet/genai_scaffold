@@ -10,7 +10,7 @@
 
 ## ✨ Features
 
-- 🔧 Clean and extensible project structure
+- 🔧 Clean and extensible project structure.
 - 🧠 Support for LLM clients (GPT, Claude, etc.)
 - 🧱 Prompt engineering modules scaffolded
 - 📦 Auto-generates config, data, notebooks, and examples
