@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+genai_scaffold/__init__.py
+genai_scaffold/__main__.py
+genai_scaffold/scaffold.py
+genai_scaffold/template_structure.py
+genai_scaffold.egg-info/PKG-INFO
+genai_scaffold.egg-info/SOURCES.txt
+genai_scaffold.egg-info/dependency_links.txt
+genai_scaffold.egg-info/entry_points.txt
+genai_scaffold.egg-info/top_level.txt
+tests/test_scaffold.py
