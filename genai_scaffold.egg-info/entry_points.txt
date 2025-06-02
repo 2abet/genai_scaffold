@@ -1,2 +1,0 @@
-[console_scripts]
-genai-scaffold = genai_scaffold.__main__:main
