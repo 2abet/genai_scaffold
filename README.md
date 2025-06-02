@@ -3,7 +3,6 @@
 **genai-scaffold** is a Python CLI tool that bootstraps production-ready Generative AI project structures with best practices and modular organization out-of-the-box.
 
 ![PyPI](https://img.shields.io/pypi/v/genai-scaffold)
-![Python](https://img.shields.io/pypi/pyversions/genai-scaffold)
 ![License](https://img.shields.io/pypi/l/genai-scaffold)
 
 ---
