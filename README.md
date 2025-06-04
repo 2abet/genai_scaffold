@@ -48,7 +48,15 @@ This creates:
 myproject/
 ├── config/
 ├── src/
+│   ├── llm/
+│   ├── prompt_engineering/
+│   ├── utils/
+│   └── handlers/
 ├── data/
+│   ├── cache/
+│   ├── prompts/
+│   ├── outputs/
+│   └── embeddings/
 ├── examples/
 ├── notebooks/
 ├── requirements.txt
