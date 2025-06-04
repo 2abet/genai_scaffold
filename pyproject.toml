@@ -1,6 +1,6 @@
 [project]
 name = "genai-scaffold"
-version = "0.1.5"
+version = "0.1.4.1"
 description = "CLI tool to scaffold production-ready Generative AI projects"
 readme = "README.md"
 requires-python = ">=3.8"
