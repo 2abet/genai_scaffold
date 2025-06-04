@@ -11,3 +11,6 @@ genai-scaffold = "genai_scaffold.__main__:main"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project.urls]
+Repository = "https://github.com/2abet/genai_scaffold"
