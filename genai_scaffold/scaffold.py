@@ -11,9 +11,13 @@ def scaffold_project(name: str):
 
     Args:
         name (str): The name of the project directory to create.
+
+    This function will create the project directory along with any missing
+    parent directories.
     """
     project_root = Path(name)
-    project_root.mkdir(exist_ok=True)
+    # Create the project directory along with any required parent directories
+    project_root.mkdir(parents=True, exist_ok=True)
 
     for folder, files in structure.items():
         folder_path = project_root / folder
