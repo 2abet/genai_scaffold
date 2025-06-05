@@ -95,7 +95,7 @@ pip install --upgrade genai-scaffold
 
 - [ ] Interactive CLI with `typer`
 - [ ] LangChain/LlamaIndex integration options
-- [ ] Built-in Streamlit UI
+- [ ] Built-in Streamlit UI/ Gradio UI
 - [ ] Prompt chaining module
 - [ ] Test coverage + GitHub Actions
 
