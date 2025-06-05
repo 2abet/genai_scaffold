@@ -5,7 +5,7 @@ description = "CLI tool to scaffold production-ready Generative AI projects"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
-authors = [{ name="Akinyemi Arabambi", email="yemiarabambi@gmail.com" }]
+authors = [{ name="Akinyemi Arabambi" }]
 dependencies = []
 
 [project.scripts]
