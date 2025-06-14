@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
 authors = [{ name="Akinyemi Arabambi" }]
-dependencies = []
+dependencies = ["Jinja2"]
 
 [project.scripts]
 genai-scaffold = "genai_scaffold.__main__:main"
