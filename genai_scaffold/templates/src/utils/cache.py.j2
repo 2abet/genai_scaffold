@@ -1,1 +1,11 @@
-# $file
+class Cache:
+    """In-memory cache helper."""
+
+    def __init__(self):
+        self._store = {}
+
+    def get(self, key):
+        return self._store.get(key)
+
+    def set(self, key, value) -> None:
+        self._store[key] = value

@@ -12,6 +12,7 @@
 - 🔧 Clean and extensible project structure.
 - 🧠 Pluggable design for adding custom LLM clients.
 - 🧱 Placeholder modules for prompt engineering.
+- 🚀 Generated modules include starter code to build on quickly.
 - 📦 Auto-generates config, data, notebooks, and examples.
 - 🐍 Basic unit test setup and packaging workflow.
 - ⚡ Fast to get started, easy to extend.
