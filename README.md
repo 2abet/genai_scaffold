@@ -10,11 +10,11 @@
 ## ✨ Features
 
 - 🔧 Clean and extensible project structure.
-- 🧠 Support for LLM clients (GPT, Claude, etc.)
-- 🧱 Prompt engineering modules scaffolded
-- 📦 Auto-generates config, data, notebooks, and examples
-- 🐍 Ready for unit testing and CI/CD integration
-- ⚡ Fast to get started, easy to extend
+- 🧠 Pluggable design for adding custom LLM clients.
+- 🧱 Placeholder modules for prompt engineering.
+- 📦 Auto-generates config, data, notebooks, and examples.
+- 🐍 Basic unit test setup and packaging workflow.
+- ⚡ Fast to get started, easy to extend.
 
 ---
 
@@ -74,8 +74,8 @@ myproject/
 
 Your scaffolded project includes:
 
-- `src/llm/`: LLM client implementations (e.g. GPT, Claude)
-- `src/prompt_engineering/`: Prompt templates and chaining
+- `src/llm/`: placeholders for LLM client implementations (e.g. GPT, Claude)
+- `src/prompt_engineering/`: starter templates and chaining helpers
 - `src/utils/`: Rate limiting, caching, logging, token counting
 - `config/`: YAML config for models, prompts, logging
 - `data/`: Inputs, outputs, embeddings, cache
@@ -96,6 +96,8 @@ pip install --upgrade genai-scaffold
 
 ## 🛠 Roadmap
 
+- [ ] Built-in LLM client implementations
+- [ ] Rich prompt engineering utilities
 - [ ] Interactive CLI with `typer`
 - [ ] LangChain/LlamaIndex integration options
 - [ ] Built-in Streamlit UI/ Gradio UI
