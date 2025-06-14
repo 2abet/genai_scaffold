@@ -39,8 +39,11 @@ pipx install genai-scaffold
 To scaffold a new Generative AI project:
 
 ```bash
-genai-scaffold myproject
+genai-scaffold myproject --provider claude
 ```
+
+The `--provider` flag selects the default LLM provider used in the generated
+configuration files.
 
 This creates:
 
