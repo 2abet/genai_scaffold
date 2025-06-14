@@ -1,1 +1,4 @@
-# $file
+def build_few_shot_prompt(examples: list[str], query: str) -> str:
+    """Combine examples with a user query."""
+    shots = "\n".join(examples)
+    return f"{shots}\n{query}"

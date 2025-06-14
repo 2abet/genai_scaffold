@@ -1,1 +1,7 @@
-# $file
+class ErrorHandler:
+    """Basic error handling utilities."""
+
+    @staticmethod
+    def handle(error: Exception) -> None:
+        """Print the error to stdout."""
+        print(f"Error: {error}")

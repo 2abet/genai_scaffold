@@ -1,1 +1,16 @@
-# $file
+import time
+
+
+class RateLimiter:
+    """Simple rate limiter."""
+
+    def __init__(self, rate: int):
+        self.rate = rate
+        self.last_call = 0.0
+
+    def wait(self):
+        now = time.time()
+        interval = 1.0 / self.rate
+        if now - self.last_call < interval:
+            time.sleep(interval - (now - self.last_call))
+        self.last_call = time.time()

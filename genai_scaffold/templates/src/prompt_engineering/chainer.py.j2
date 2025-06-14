@@ -1,1 +1,10 @@
-# $file
+class PromptChain:
+    """Chain together multiple prompts."""
+
+    def __init__(self, prompts):
+        self.prompts = prompts
+
+    def run(self, input_text: str) -> str:
+        for prompt in self.prompts:
+            input_text = prompt.format(input=input_text)
+        return input_text

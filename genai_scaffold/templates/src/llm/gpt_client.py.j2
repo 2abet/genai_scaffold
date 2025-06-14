@@ -1,1 +1,9 @@
-# $file for {{ llm_provider }}
+from .base import BaseLLMClient
+
+
+class GPTClient(BaseLLMClient):
+    """Example client for the GPT API."""
+
+    def complete(self, prompt: str) -> str:
+        """Return a dummy GPT response."""
+        return "gpt response"

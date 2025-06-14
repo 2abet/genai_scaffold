@@ -1,1 +1,9 @@
-# $file for {{ llm_provider }}
+class BaseLLMClient:
+    """Common interface for LLM providers."""
+
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+
+    def complete(self, prompt: str) -> str:
+        """Return a completion for the given prompt."""
+        raise NotImplementedError

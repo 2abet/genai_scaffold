@@ -1,1 +1,9 @@
-# $file for {{ llm_provider }}
+from .base import BaseLLMClient
+
+
+class ClaudeClient(BaseLLMClient):
+    """Example client for the Claude API."""
+
+    def complete(self, prompt: str) -> str:
+        """Return a dummy Claude response."""
+        return "claude response"
