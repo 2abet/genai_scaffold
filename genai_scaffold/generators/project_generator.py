@@ -70,6 +70,7 @@ class ProjectGenerator:
             "use_anthropic": self.config.llm_provider == "anthropic",
             "use_azure": self.config.llm_provider == "azure",
             "use_ollama": self.config.llm_provider == "ollama",
+            "use_local": self.config.llm_provider == "local",
             "use_pinecone": self.config.vector_db == "pinecone",
             "use_chromadb": self.config.vector_db == "chromadb",
             "use_qdrant": self.config.vector_db == "qdrant",

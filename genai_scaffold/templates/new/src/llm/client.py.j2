@@ -12,6 +12,9 @@ from openai import AzureOpenAI
 {% endif -%}
 {% if use_ollama -%}
 import ollama
+{% endif -%}
+{% if use_local -%}
+from openai import OpenAI
 {% endif %}
 
 from ..config import Config
@@ -44,6 +47,14 @@ class LLMClient:
 {% if use_ollama -%}
         self.base_url = Config.OLLAMA_BASE_URL
         self.model = Config.OLLAMA_MODEL
+{% endif -%}
+{% if use_local -%}
+        # OpenAI-compatible local endpoint (e.g., LM Studio, LocalAI, text-generation-webui)
+        self.client = OpenAI(
+            api_key=Config.LOCAL_API_KEY,
+            base_url=Config.LOCAL_API_BASE_URL
+        )
+        self.model = Config.LOCAL_MODEL
 {% endif %}
     
 {% if enable_observability -%}
@@ -67,7 +78,7 @@ class LLMClient:
         Returns:
             Generated text response
         """
-{% if use_openai or use_azure -%}
+{% if use_openai or use_azure or use_local -%}
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
@@ -121,7 +132,7 @@ class LLMClient:
         Returns:
             Generated response
         """
-{% if use_openai or use_azure -%}
+{% if use_openai or use_azure or use_local -%}
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
@@ -163,7 +174,7 @@ class LLMClient:
         Returns:
             List of embedding values
         """
-{% if use_openai or use_azure -%}
+{% if use_openai or use_azure or use_local -%}
         response = self.client.embeddings.create(
             model="text-embedding-3-small",
             input=text

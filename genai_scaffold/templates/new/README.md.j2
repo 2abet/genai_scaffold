@@ -83,6 +83,10 @@ A production-ready Generative AI application built with best practices and modul
    AZURE_OPENAI_API_KEY=your_key_here
    AZURE_OPENAI_ENDPOINT=your_endpoint_here
 {% endif -%}
+{% if use_local -%}
+   LOCAL_API_BASE_URL=http://localhost:1234/v1
+   LOCAL_MODEL=your_model_name
+{% endif -%}
 {% if use_pinecone -%}
    PINECONE_API_KEY=your_key_here
    PINECONE_ENVIRONMENT=your_environment_here

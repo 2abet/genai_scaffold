@@ -78,7 +78,7 @@ def test_project_config_with_observability():
 
 def test_project_config_all_providers():
     """Test all valid LLM providers."""
-    providers = ["openai", "anthropic", "azure", "ollama"]
+    providers = ["openai", "anthropic", "azure", "ollama", "local"]
     
     for provider in providers:
         config = ProjectConfig(

@@ -41,6 +41,7 @@ def interactive_config() -> ProjectConfig:
                 Choice(value="anthropic", name="Anthropic (Claude)"),
                 Choice(value="azure", name="Azure OpenAI"),
                 Choice(value="ollama", name="Ollama (Local)"),
+                Choice(value="local", name="Local (OpenAI-compatible endpoint)"),
             ],
             "default": "openai",
         },
@@ -146,7 +147,7 @@ def create(
     llm_provider: Optional[str] = typer.Option(
         None,
         "--provider",
-        help="LLM Provider (openai, anthropic, azure, ollama)"
+        help="LLM Provider (openai, anthropic, azure, ollama, local)"
     ),
     orchestrator: Optional[str] = typer.Option(
         None,

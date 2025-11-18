@@ -9,7 +9,7 @@ class ProjectConfig:
     """Configuration for a GenAI project."""
     
     project_name: str
-    llm_provider: str  # openai, anthropic, azure, ollama
+    llm_provider: str  # openai, anthropic, azure, ollama, local
     orchestrator: str  # langchain, llamaindex, dspy, none
     vector_db: str  # pinecone, chromadb, qdrant, pgvector
     ui_framework: str  # streamlit, gradio, fastapi, none
@@ -20,7 +20,7 @@ class ProjectConfig:
     
     def __post_init__(self):
         """Validate configuration."""
-        valid_llm_providers = ["openai", "anthropic", "azure", "ollama"]
+        valid_llm_providers = ["openai", "anthropic", "azure", "ollama", "local"]
         valid_orchestrators = ["langchain", "llamaindex", "dspy", "none"]
         valid_vector_dbs = ["pinecone", "chromadb", "qdrant", "pgvector"]
         valid_ui_frameworks = ["streamlit", "gradio", "fastapi", "none"]

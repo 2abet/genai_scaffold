@@ -45,6 +45,12 @@ class Config:
     # Ollama Configuration
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
+{% endif -%}
+{% if use_local -%}
+    # Local OpenAI-compatible Configuration
+    LOCAL_API_BASE_URL = os.getenv("LOCAL_API_BASE_URL", "http://localhost:1234/v1")
+    LOCAL_API_KEY = os.getenv("LOCAL_API_KEY", "not-needed")
+    LOCAL_MODEL = os.getenv("LOCAL_MODEL", "local-model")
 {% endif %}
     
 {% if use_pinecone -%}
@@ -105,6 +111,10 @@ class Config:
             errors.append("AZURE_OPENAI_API_KEY is required")
         if not cls.AZURE_OPENAI_ENDPOINT:
             errors.append("AZURE_OPENAI_ENDPOINT is required")
+{% endif -%}
+{% if use_local -%}
+        if not cls.LOCAL_API_BASE_URL:
+            errors.append("LOCAL_API_BASE_URL is required")
 {% endif -%}
 {% if use_pinecone -%}
         if not cls.PINECONE_API_KEY:
