@@ -1,0 +1,216 @@
+"""FastAPI application for {{ project_name }}."""
+
+from typing import List, Optional
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from pydantic import BaseModel
+{% if orchestrator != "none" -%}
+from src.rag_pipeline import RAGPipeline
+{% else -%}
+from src.llm import LLMClient
+from src.vector_store import VectorStore
+from src.prompts import load_prompt
+{% endif %}
+from src.utils import get_logger
+
+logger = get_logger(__name__)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="{{ project_name }}",
+    description="RAG-powered API built with {{ llm_provider }} and {{ vector_db }}",
+    version="0.1.0"
+)
+
+# Initialize components
+{% if orchestrator != "none" -%}
+pipeline = RAGPipeline()
+{% else -%}
+llm_client = LLMClient()
+vector_store = VectorStore()
+{% endif %}
+
+
+# Request/Response models
+class QueryRequest(BaseModel):
+    """Query request model."""
+    question: str
+    max_results: Optional[int] = 3
+
+
+class QueryResponse(BaseModel):
+    """Query response model."""
+    answer: str
+    sources: Optional[List[dict]] = None
+
+
+class DocumentRequest(BaseModel):
+    """Document addition request model."""
+    content: str
+
+
+class DocumentsRequest(BaseModel):
+    """Multiple documents addition request model."""
+    documents: List[str]
+
+
+class StatusResponse(BaseModel):
+    """Status response model."""
+    status: str
+    message: str
+
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "name": "{{ project_name }}",
+        "description": "RAG-powered API",
+        "llm_provider": "{{ llm_provider }}",
+        "orchestrator": "{{ orchestrator }}",
+        "vector_db": "{{ vector_db }}",
+    }
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"status": "healthy"}
+
+
+@app.post("/query", response_model=QueryResponse)
+async def query(request: QueryRequest):
+    """Query the RAG system.
+    
+    Args:
+        request: Query request with question
+        
+    Returns:
+        Answer and optional sources
+    """
+    try:
+        logger.info(f"Processing query: {request.question}")
+        
+{% if orchestrator != "none" -%}
+        answer = pipeline.query(request.question)
+        
+        return QueryResponse(
+            answer=answer,
+            sources=None  # Can be extended to return sources
+        )
+{% else -%}
+        # Retrieve context
+        results = vector_store.search(request.question, k=request.max_results)
+        context = "\n\n".join([r["content"] for r in results]) if results else "No relevant context found."
+        
+        # Generate response
+        full_prompt = load_prompt("rag_query", context=context, question=request.question)
+        answer = llm_client.generate(full_prompt)
+        
+        return QueryResponse(
+            answer=answer,
+            sources=[{"content": r["content"], "score": r["score"]} for r in results]
+        )
+{% endif %}
+        
+    except Exception as e:
+        logger.error(f"Error processing query: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/documents", response_model=StatusResponse)
+async def add_document(request: DocumentRequest):
+    """Add a single document to the knowledge base.
+    
+    Args:
+        request: Document content
+        
+    Returns:
+        Status response
+    """
+    try:
+        logger.info("Adding document to knowledge base")
+        
+{% if orchestrator != "none" -%}
+        pipeline.add_documents([request.content])
+{% else -%}
+        vector_store.add_documents([request.content])
+{% endif %}
+        
+        return StatusResponse(
+            status="success",
+            message="Document added successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error adding document: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/documents/batch", response_model=StatusResponse)
+async def add_documents(request: DocumentsRequest):
+    """Add multiple documents to the knowledge base.
+    
+    Args:
+        request: List of documents
+        
+    Returns:
+        Status response
+    """
+    try:
+        logger.info(f"Adding {len(request.documents)} documents to knowledge base")
+        
+{% if orchestrator != "none" -%}
+        pipeline.add_documents(request.documents)
+{% else -%}
+        vector_store.add_documents(request.documents)
+{% endif %}
+        
+        return StatusResponse(
+            status="success",
+            message=f"Added {len(request.documents)} documents successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error adding documents: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/documents/upload", response_model=StatusResponse)
+async def upload_document(file: UploadFile = File(...)):
+    """Upload a text file to add to the knowledge base.
+    
+    Args:
+        file: Uploaded file
+        
+    Returns:
+        Status response
+    """
+    try:
+        logger.info(f"Processing uploaded file: {file.filename}")
+        
+        # Read file content
+        content = await file.read()
+        text = content.decode('utf-8')
+        
+        # Split into chunks (simple split by paragraphs)
+        chunks = [chunk.strip() for chunk in text.split('\n\n') if chunk.strip()]
+        
+{% if orchestrator != "none" -%}
+        pipeline.add_documents(chunks)
+{% else -%}
+        vector_store.add_documents(chunks)
+{% endif %}
+        
+        return StatusResponse(
+            status="success",
+            message=f"Added {len(chunks)} chunks from {file.filename}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

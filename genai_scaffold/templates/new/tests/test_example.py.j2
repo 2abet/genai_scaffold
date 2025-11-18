@@ -1,0 +1,35 @@
+"""Example tests for {{ project_name }}."""
+
+import pytest
+from src.prompts import load_prompt, list_prompts
+
+
+def test_load_prompt():
+    """Test loading a prompt template."""
+    prompt = load_prompt(
+        "rag_query",
+        context="Sample context",
+        question="What is AI?"
+    )
+    assert "Sample context" in prompt
+    assert "What is AI?" in prompt
+
+
+def test_list_prompts():
+    """Test listing available prompts."""
+    prompts = list_prompts()
+    assert isinstance(prompts, list)
+    assert len(prompts) > 0
+    assert "rag_query" in prompts
+
+
+def test_sample_data(sample_text):
+    """Test with sample data fixture."""
+    assert isinstance(sample_text, str)
+    assert len(sample_text) > 0
+
+
+def test_sample_documents(sample_documents):
+    """Test with sample documents fixture."""
+    assert isinstance(sample_documents, list)
+    assert len(sample_documents) == 3

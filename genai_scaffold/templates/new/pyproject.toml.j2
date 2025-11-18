@@ -1,0 +1,87 @@
+[tool.poetry]
+name = "{{ project_name }}"
+version = "0.1.0"
+description = "GenAI application built with {{ llm_provider }} and {{ vector_db }}"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+python-dotenv = "^1.0.0"
+pyyaml = "^6.0"
+{% if use_openai or use_azure -%}
+openai = "^1.0.0"
+{% endif -%}
+{% if use_anthropic -%}
+anthropic = "^0.18.0"
+{% endif -%}
+{% if use_ollama -%}
+ollama = "^0.1.0"
+{% endif -%}
+{% if use_langchain -%}
+langchain = "^0.1.0"
+{% if use_openai or use_azure -%}
+langchain-openai = "^0.0.2"
+{% endif -%}
+{% if use_anthropic -%}
+langchain-anthropic = "^0.1.0"
+{% endif -%}
+{% endif -%}
+{% if use_llamaindex -%}
+llama-index = "^0.9.0"
+{% endif -%}
+{% if use_dspy -%}
+dspy-ai = "^2.0.0"
+{% endif -%}
+{% if use_chromadb -%}
+chromadb = "^0.4.0"
+{% endif -%}
+{% if use_pinecone -%}
+pinecone-client = "^3.0.0"
+{% endif -%}
+{% if use_qdrant -%}
+qdrant-client = "^1.7.0"
+{% endif -%}
+{% if use_pgvector -%}
+psycopg2-binary = "^2.9.0"
+pgvector = "^0.2.0"
+{% endif -%}
+{% if use_streamlit -%}
+streamlit = "^1.30.0"
+{% endif -%}
+{% if use_gradio -%}
+gradio = "^4.0.0"
+{% endif -%}
+{% if use_fastapi -%}
+fastapi = "^0.109.0"
+uvicorn = {extras = ["standard"], version = "^0.27.0"}
+pydantic = "^2.0.0"
+{% endif -%}
+{% if use_wandb -%}
+wandb = "^0.16.0"
+{% endif %}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pytest-asyncio = "^0.21.0"
+black = "^23.0.0"
+isort = "^5.12.0"
+ruff = "^0.1.0"
+mypy = "^1.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"

@@ -1,0 +1,101 @@
+# Core dependencies for {{ project_name }}
+
+# Python utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+{% if use_openai or use_azure -%}
+# OpenAI
+openai>=1.0.0
+{% endif -%}
+{% if use_anthropic -%}
+# Anthropic
+anthropic>=0.18.0
+{% endif -%}
+{% if use_ollama -%}
+# Ollama
+ollama>=0.1.0
+{% endif %}
+
+{% if use_langchain -%}
+# LangChain
+langchain>=0.1.0
+{% if use_openai or use_azure -%}
+langchain-openai>=0.0.2
+{% endif -%}
+{% if use_anthropic -%}
+langchain-anthropic>=0.1.0
+{% endif -%}
+{% if use_chromadb -%}
+chromadb>=0.4.0
+{% endif -%}
+{% if use_pinecone -%}
+pinecone-client>=3.0.0
+{% endif -%}
+{% if use_qdrant -%}
+qdrant-client>=1.7.0
+{% endif -%}
+{% endif -%}
+
+{% if use_llamaindex -%}
+# LlamaIndex
+llama-index>=0.9.0
+{% if use_chromadb -%}
+chromadb>=0.4.0
+{% endif -%}
+{% if use_pinecone -%}
+pinecone-client>=3.0.0
+{% endif -%}
+{% if use_qdrant -%}
+qdrant-client>=1.7.0
+{% endif -%}
+{% endif -%}
+
+{% if use_dspy -%}
+# DSPy
+dspy-ai>=2.0.0
+{% endif %}
+
+{% if use_chromadb and not use_langchain and not use_llamaindex -%}
+# ChromaDB
+chromadb>=0.4.0
+{% endif -%}
+{% if use_pinecone and not use_langchain and not use_llamaindex -%}
+# Pinecone
+pinecone-client>=3.0.0
+{% endif -%}
+{% if use_qdrant and not use_langchain and not use_llamaindex -%}
+# Qdrant
+qdrant-client>=1.7.0
+{% endif -%}
+{% if use_pgvector -%}
+# PostgreSQL with pgvector
+psycopg2-binary>=2.9.0
+pgvector>=0.2.0
+{% endif %}
+
+{% if use_streamlit -%}
+# Streamlit
+streamlit>=1.30.0
+{% endif -%}
+{% if use_gradio -%}
+# Gradio
+gradio>=4.0.0
+{% endif -%}
+{% if use_fastapi -%}
+# FastAPI
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.0.0
+{% endif %}
+
+{% if use_langsmith -%}
+# LangSmith (already included with langchain)
+{% if not use_langchain -%}
+langsmith>=0.0.80
+{% endif -%}
+{% endif -%}
+{% if use_wandb -%}
+# Weights & Biases
+wandb>=0.16.0
+{% endif %}

@@ -1,12 +1,18 @@
 [project]
 name = "genai-scaffold"
-version = "0.1.4.1"
-description = "CLI tool to scaffold production-ready Generative AI projects"
+version = "0.2.0"
+description = "Interactive CLI tool to scaffold production-ready Generative AI projects with customizable tech stacks"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
 authors = [{ name="Akinyemi Arabambi" }]
-dependencies = ["Jinja2"]
+dependencies = [
+    "Jinja2>=3.0.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "inquirerpy>=0.3.4",
+    "pyyaml>=6.0"
+]
 
 [project.scripts]
 genai-scaffold = "genai_scaffold.__main__:main"

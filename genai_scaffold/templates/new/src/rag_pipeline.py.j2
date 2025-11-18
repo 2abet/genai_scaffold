@@ -1,0 +1,225 @@
+"""RAG (Retrieval-Augmented Generation) pipeline using {{ orchestrator }}."""
+
+from typing import List, Dict, Any
+{% if use_langchain -%}
+from langchain.vectorstores import Chroma, Pinecone, Qdrant
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI, ChatAnthropic
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+{% endif -%}
+{% if use_llamaindex -%}
+from llama_index import VectorStoreIndex, ServiceContext, StorageContext
+from llama_index.vector_stores import ChromaVectorStore, PineconeVectorStore, QdrantVectorStore
+from llama_index.llms import OpenAI, Anthropic
+from llama_index.embeddings import OpenAIEmbedding
+{% endif -%}
+{% if use_dspy -%}
+import dspy
+{% endif %}
+
+from .config import Config
+from .llm import LLMClient
+from .vector_store import VectorStore
+from .prompts import load_prompt
+from .utils import get_logger
+
+logger = get_logger(__name__)
+
+
+class RAGPipeline:
+    """RAG pipeline for retrieval-augmented generation."""
+    
+    def __init__(self):
+        """Initialize the RAG pipeline."""
+{% if use_langchain -%}
+        # Initialize embeddings
+{% if use_openai or use_azure -%}
+        self.embeddings = OpenAIEmbeddings(openai_api_key=Config.OPENAI_API_KEY)
+{% endif %}
+        
+        # Initialize LLM
+{% if use_openai or use_azure -%}
+        self.llm = ChatOpenAI(
+            model_name=Config.OPENAI_MODEL,
+            openai_api_key=Config.OPENAI_API_KEY,
+            temperature=0.7
+        )
+{% elif use_anthropic -%}
+        self.llm = ChatAnthropic(
+            model=Config.ANTHROPIC_MODEL,
+            anthropic_api_key=Config.ANTHROPIC_API_KEY,
+            temperature=0.7
+        )
+{% endif %}
+        
+        # Initialize vector store
+{% if use_chromadb -%}
+        self.vector_store = Chroma(
+            collection_name=Config.CHROMA_COLLECTION_NAME,
+            embedding_function=self.embeddings
+        )
+{% elif use_pinecone -%}
+        self.vector_store = Pinecone.from_existing_index(
+            index_name=Config.PINECONE_INDEX_NAME,
+            embedding=self.embeddings
+        )
+{% elif use_qdrant -%}
+        self.vector_store = Qdrant(
+            client=None,  # Will use config
+            collection_name=Config.QDRANT_COLLECTION_NAME,
+            embeddings=self.embeddings
+        )
+{% endif %}
+        
+        # Create QA chain
+        prompt_template = load_prompt("rag_query", context="{context}", question="{question}")
+        PROMPT = PromptTemplate(
+            template=prompt_template,
+            input_variables=["context", "question"]
+        )
+        
+        self.qa_chain = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=self.vector_store.as_retriever(search_kwargs={"k": 3}),
+            chain_type_kwargs={"prompt": PROMPT}
+        )
+{% endif -%}
+{% if use_llamaindex -%}
+        # Initialize service context
+{% if use_openai or use_azure -%}
+        llm = OpenAI(model=Config.OPENAI_MODEL, api_key=Config.OPENAI_API_KEY)
+        embed_model = OpenAIEmbedding(api_key=Config.OPENAI_API_KEY)
+{% elif use_anthropic -%}
+        llm = Anthropic(model=Config.ANTHROPIC_MODEL, api_key=Config.ANTHROPIC_API_KEY)
+        embed_model = OpenAIEmbedding()  # Anthropic doesn't provide embeddings
+{% endif %}
+        
+        self.service_context = ServiceContext.from_defaults(
+            llm=llm,
+            embed_model=embed_model
+        )
+        
+        # Initialize vector store
+{% if use_chromadb -%}
+        import chromadb
+        chroma_client = chromadb.HttpClient(host=Config.CHROMA_HOST, port=Config.CHROMA_PORT)
+        chroma_collection = chroma_client.get_or_create_collection(Config.CHROMA_COLLECTION_NAME)
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+{% elif use_pinecone -%}
+        from pinecone import Pinecone
+        pc = Pinecone(api_key=Config.PINECONE_API_KEY)
+        pinecone_index = pc.Index(Config.PINECONE_INDEX_NAME)
+        vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
+{% elif use_qdrant -%}
+        from qdrant_client import QdrantClient
+        client = QdrantClient(url=Config.QDRANT_URL, api_key=Config.QDRANT_API_KEY)
+        vector_store = QdrantVectorStore(client=client, collection_name=Config.QDRANT_COLLECTION_NAME)
+{% endif %}
+        
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        self.index = VectorStoreIndex.from_vector_store(
+            vector_store,
+            service_context=self.service_context
+        )
+{% endif -%}
+{% if use_dspy -%}
+        # Configure DSPy
+{% if use_openai or use_azure -%}
+        lm = dspy.OpenAI(model=Config.OPENAI_MODEL, api_key=Config.OPENAI_API_KEY)
+{% elif use_anthropic -%}
+        lm = dspy.Claude(model=Config.ANTHROPIC_MODEL, api_key=Config.ANTHROPIC_API_KEY)
+{% endif %}
+        dspy.settings.configure(lm=lm)
+        
+        self.vector_store = VectorStore()
+{% endif -%}
+{% if orchestrator == "none" -%}
+        self.llm_client = LLMClient()
+        self.vector_store = VectorStore()
+{% endif %}
+    
+    def add_documents(self, documents: List[str]) -> None:
+        """Add documents to the knowledge base.
+        
+        Args:
+            documents: List of text documents to add
+        """
+        logger.info(f"Adding {len(documents)} documents to knowledge base")
+        
+{% if use_langchain -%}
+        self.vector_store.add_texts(documents)
+{% elif use_llamaindex -%}
+        from llama_index import Document
+        docs = [Document(text=doc) for doc in documents]
+        self.index.insert(docs)
+{% else -%}
+        self.vector_store.add_documents(documents)
+{% endif %}
+        
+        logger.info("Documents added successfully")
+    
+    def query(self, question: str) -> str:
+        """Query the RAG pipeline.
+        
+        Args:
+            question: Question to ask
+            
+        Returns:
+            Generated answer
+        """
+        logger.info(f"Processing query: {question}")
+        
+{% if use_langchain -%}
+        result = self.qa_chain.run(question)
+        return result
+{% elif use_llamaindex -%}
+        query_engine = self.index.as_query_engine()
+        response = query_engine.query(question)
+        return str(response)
+{% elif use_dspy -%}
+        # Retrieve relevant documents
+        results = self.vector_store.search(question, k=3)
+        context = "\n\n".join([r["content"] for r in results])
+        
+        # Generate answer using DSPy
+        class RAG(dspy.Module):
+            def __init__(self):
+                super().__init__()
+                self.generate = dspy.ChainOfThought("context, question -> answer")
+            
+            def forward(self, context, question):
+                return self.generate(context=context, question=question)
+        
+        rag = RAG()
+        result = rag(context=context, question=question)
+        return result.answer
+{% else -%}
+        # Retrieve relevant documents
+        results = self.vector_store.search(question, k=3)
+        context = "\n\n".join([r["content"] for r in results])
+        
+        # Generate answer
+        prompt = load_prompt("rag_query", context=context, question=question)
+        answer = self.llm_client.generate(prompt)
+        
+        return answer
+{% endif %}
+
+
+if __name__ == "__main__":
+    # Example usage
+    pipeline = RAGPipeline()
+    
+    # Add sample documents
+    sample_docs = [
+        "Python is a high-level programming language.",
+        "Machine learning is a subset of artificial intelligence.",
+        "Neural networks are inspired by biological neural networks."
+    ]
+    pipeline.add_documents(sample_docs)
+    
+    # Query
+    response = pipeline.query("What is Python?")
+    print(f"Answer: {response}")
