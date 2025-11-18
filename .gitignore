@@ -83,6 +83,7 @@ $RECYCLE.BIN/
 # dotenv
 .env
 .env.*
+!.env.example.j2
 
 # Node (if any JS/TS)
 node_modules/
