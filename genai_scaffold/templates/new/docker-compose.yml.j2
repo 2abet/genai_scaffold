@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+{% if use_chromadb -%}
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+{% endif %}
+
+{% if use_qdrant -%}
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+{% endif %}
+
+{% if use_pgvector -%}
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: {{ project_name }}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+{% endif %}
+
+  app:
+    build: .
+    ports:
+{% if ui_framework == "streamlit" -%}
+      - "8501:8501"
+{% elif ui_framework == "gradio" -%}
+      - "7860:7860"
+{% elif ui_framework == "fastapi" -%}
+      - "8000:8000"
+{% else -%}
+      - "8000:8000"
+{% endif -%}
+    volumes:
+      - .:/app
+    environment:
+      - ENVIRONMENT=development
+    env_file:
+      - .env
+    depends_on:
+{% if use_chromadb -%}
+      - chromadb
+{% endif -%}
+{% if use_qdrant -%}
+      - qdrant
+{% endif -%}
+{% if use_pgvector -%}
+      - postgres
+{% endif -%}
+
+volumes:
+{% if use_chromadb -%}
+  chroma_data:
+{% endif -%}
+{% if use_qdrant -%}
+  qdrant_data:
+{% endif -%}
+{% if use_pgvector -%}
+  postgres_data:
+{% endif -%}

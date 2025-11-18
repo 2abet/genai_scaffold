@@ -1,0 +1,252 @@
+# {{ project_name }}
+
+A production-ready Generative AI application built with best practices and modular architecture.
+
+## 🚀 Tech Stack
+
+- **LLM Provider:** {{ llm_provider }}
+- **Orchestrator:** {{ orchestrator }}
+- **Vector Database:** {{ vector_db }}
+{% if ui_framework != "none" -%}
+- **UI Framework:** {{ ui_framework }}
+{% endif -%}
+- **Dependency Manager:** {{ dependency_manager }}
+{% if enable_observability -%}
+- **Observability:** {{ observability_tool }}
+{% endif %}
+
+## 📁 Project Structure
+
+```
+{{ project_name }}/
+├── src/
+│   ├── llm/              # LLM client implementation
+│   ├── prompts/          # Prompt templates and management
+│   ├── utils/            # Utility functions
+│   ├── handlers/         # Error handlers, etc.
+{% if orchestrator != "none" -%}
+│   ├── rag_pipeline.py   # RAG implementation
+{% endif -%}
+│   ├── vector_store.py   # Vector database interface
+│   └── config.py         # Configuration management
+├── tests/                # Test suite
+├── data/                 # Data directories
+│   ├── cache/
+│   ├── outputs/
+│   └── embeddings/
+├── notebooks/            # Jupyter notebooks for experimentation
+{% if enable_docker -%}
+├── docker-compose.yml    # Docker services
+├── Dockerfile            # Application container
+{% endif -%}
+├── .env.example          # Environment variables template
+├── Makefile              # Common tasks
+{% if use_poetry -%}
+├── pyproject.toml        # Poetry dependencies
+{% else -%}
+├── requirements.txt      # Python dependencies
+├── requirements-dev.txt  # Development dependencies
+{% endif -%}
+└── README.md             # This file
+```
+
+## 🛠️ Setup
+
+### Prerequisites
+
+- Python 3.8+
+{% if enable_docker -%}
+- Docker and Docker Compose (optional, for containerized setup)
+{% endif %}
+
+### Installation
+
+1. **Clone or navigate to the project:**
+   ```bash
+   cd {{ project_name }}
+   ```
+
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your API keys and configuration:
+   ```bash
+{% if use_openai -%}
+   OPENAI_API_KEY=your_key_here
+{% endif -%}
+{% if use_anthropic -%}
+   ANTHROPIC_API_KEY=your_key_here
+{% endif -%}
+{% if use_azure -%}
+   AZURE_OPENAI_API_KEY=your_key_here
+   AZURE_OPENAI_ENDPOINT=your_endpoint_here
+{% endif -%}
+{% if use_pinecone -%}
+   PINECONE_API_KEY=your_key_here
+   PINECONE_ENVIRONMENT=your_environment_here
+{% endif -%}
+{% if use_langsmith -%}
+   LANGCHAIN_API_KEY=your_key_here
+   LANGCHAIN_TRACING_V2=true
+{% endif -%}
+{% if use_wandb -%}
+   WANDB_API_KEY=your_key_here
+{% endif -%}
+   ```
+
+3. **Install dependencies:**
+
+{% if use_poetry -%}
+   Using Poetry:
+   ```bash
+   poetry install
+   ```
+{% else -%}
+   Using pip:
+   ```bash
+   make setup
+   # or manually:
+   pip install -r requirements.txt
+   ```
+{% endif %}
+
+{% if enable_docker -%}
+4. **Start services with Docker (optional):**
+   ```bash
+   docker-compose up -d
+   ```
+   
+   This will start:
+{% if use_chromadb -%}
+   - ChromaDB server
+{% endif -%}
+{% if use_qdrant -%}
+   - Qdrant vector database
+{% endif -%}
+{% if use_pgvector -%}
+   - PostgreSQL with pgvector extension
+{% endif -%}
+{% endif %}
+
+## 🏃 Running the Application
+
+{% if ui_framework == "streamlit" -%}
+### Streamlit UI
+
+```bash
+make run
+# or: streamlit run app.py
+```
+
+Access the app at http://localhost:8501
+{% elif ui_framework == "gradio" -%}
+### Gradio UI
+
+```bash
+make run
+# or: python app.py
+```
+
+Access the app at http://localhost:7860
+{% elif ui_framework == "fastapi" -%}
+### FastAPI Server
+
+```bash
+make run
+# or: uvicorn app:app --reload
+```
+
+API documentation at http://localhost:8000/docs
+{% else -%}
+### Running Scripts
+
+```bash
+python -m src.rag_pipeline
+```
+{% endif %}
+
+## 🧪 Testing
+
+Run tests with pytest:
+
+```bash
+make test
+# or: pytest tests/ -v
+```
+
+Run tests with coverage:
+
+```bash
+make test-coverage
+```
+
+## 🔧 Development
+
+### Code Quality
+
+Format code:
+```bash
+make format
+```
+
+Run linter:
+```bash
+make lint
+```
+
+### Prompt Management
+
+Prompts are stored in `src/prompts/templates.yaml`. Use the prompt loader:
+
+```python
+from src.prompts import load_prompt
+
+prompt = load_prompt("rag_query")
+```
+
+{% if enable_observability -%}
+### Observability
+
+{% if use_langsmith -%}
+This project is configured with LangSmith for tracing and debugging. View traces at https://smith.langchain.com/
+{% elif use_wandb -%}
+This project is configured with Weights & Biases for experiment tracking. View runs at https://wandb.ai/
+{% endif -%}
+{% endif %}
+
+## 📚 Key Features
+
+{% if orchestrator == "langchain" -%}
+- **LangChain Integration**: Full RAG pipeline with LangChain
+{% elif orchestrator == "llamaindex" -%}
+- **LlamaIndex Integration**: Data connectors and query engines
+{% elif orchestrator == "dspy" -%}
+- **DSPy Integration**: Declarative language model programming
+{% endif -%}
+- **Vector Store**: {{ vector_db }} for semantic search
+- **Prompt Management**: Versioned prompts with YAML configuration
+- **Testing**: Comprehensive test suite with pytest
+{% if enable_docker -%}
+- **Docker Support**: Containerized deployment ready
+{% endif -%}
+{% if enable_observability -%}
+- **Observability**: {{ observability_tool }} integration for monitoring
+{% endif -%}
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
+
+## 📄 License
+
+This project was generated using [genai-scaffold](https://github.com/2abet/genai_scaffold).
+
+## 🙏 Acknowledgments
+
+Built with genai-scaffold - A tool for scaffolding production-ready GenAI applications.

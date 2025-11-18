@@ -1,0 +1,112 @@
+"""Prompt template loader and manager."""
+
+from pathlib import Path
+from typing import Dict, Any, List
+import yaml
+
+
+class PromptLoader:
+    """Load and manage prompt templates."""
+    
+    def __init__(self, templates_file: Path = None):
+        """Initialize the prompt loader.
+        
+        Args:
+            templates_file: Path to YAML file containing prompt templates
+        """
+        if templates_file is None:
+            templates_file = Path(__file__).parent / "templates.yaml"
+        
+        self.templates_file = templates_file
+        self._templates = None
+    
+    def _load_templates(self) -> Dict[str, Any]:
+        """Load templates from YAML file."""
+        if self._templates is None:
+            with open(self.templates_file, 'r') as f:
+                self._templates = yaml.safe_load(f)
+        return self._templates
+    
+    def get_prompt(self, name: str, **kwargs) -> str:
+        """Get a prompt template by name and format with variables.
+        
+        Args:
+            name: Name of the prompt template
+            **kwargs: Variables to format the template
+            
+        Returns:
+            Formatted prompt string
+            
+        Raises:
+            KeyError: If prompt name not found
+        """
+        templates = self._load_templates()
+        
+        if name not in templates:
+            raise KeyError(f"Prompt '{name}' not found. Available: {list(templates.keys())}")
+        
+        prompt_data = templates[name]
+        template = prompt_data.get('template', '')
+        
+        # Format template with provided variables
+        try:
+            return template.format(**kwargs)
+        except KeyError as e:
+            raise ValueError(f"Missing required variable for prompt '{name}': {e}")
+    
+    def list_prompts(self) -> List[str]:
+        """List all available prompt names.
+        
+        Returns:
+            List of prompt names
+        """
+        templates = self._load_templates()
+        return list(templates.keys())
+    
+    def get_prompt_metadata(self, name: str) -> Dict[str, Any]:
+        """Get metadata for a prompt template.
+        
+        Args:
+            name: Name of the prompt template
+            
+        Returns:
+            Metadata dictionary including description, version, etc.
+        """
+        templates = self._load_templates()
+        
+        if name not in templates:
+            raise KeyError(f"Prompt '{name}' not found")
+        
+        prompt_data = templates[name]
+        return {
+            'name': name,
+            'description': prompt_data.get('description', ''),
+            'version': prompt_data.get('version', '1.0'),
+            'variables': prompt_data.get('variables', []),
+        }
+
+
+# Global loader instance
+_loader = PromptLoader()
+
+
+def load_prompt(name: str, **kwargs) -> str:
+    """Load and format a prompt template.
+    
+    Args:
+        name: Prompt template name
+        **kwargs: Variables for template formatting
+        
+    Returns:
+        Formatted prompt string
+    """
+    return _loader.get_prompt(name, **kwargs)
+
+
+def list_prompts() -> List[str]:
+    """List all available prompts.
+    
+    Returns:
+        List of prompt names
+    """
+    return _loader.list_prompts()

@@ -1,0 +1,46 @@
+# Prompt Templates for {{ project_name }}
+
+rag_query:
+  description: "RAG query prompt for retrieval-augmented generation"
+  version: "1.0"
+  variables: ["context", "question"]
+  template: |
+    You are a helpful AI assistant. Use the following context to answer the question.
+    If you cannot answer based on the context, say so.
+    
+    Context:
+    {context}
+    
+    Question: {question}
+    
+    Answer:
+
+system_prompt:
+  description: "Default system prompt for the assistant"
+  version: "1.0"
+  variables: []
+  template: |
+    You are a helpful, accurate, and friendly AI assistant.
+    Provide clear, concise, and accurate responses.
+
+summarization:
+  description: "Text summarization prompt"
+  version: "1.0"
+  variables: ["text"]
+  template: |
+    Please provide a concise summary of the following text:
+    
+    {text}
+    
+    Summary:
+
+question_answering:
+  description: "General question answering prompt"
+  version: "1.0"
+  variables: ["question"]
+  template: |
+    Please answer the following question accurately and concisely:
+    
+    Question: {question}
+    
+    Answer:

@@ -1,0 +1,32 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY . .
+
+# Environment
+ENV PYTHONUNBUFFERED=1
+
+{% if ui_framework == "streamlit" -%}
+# Expose Streamlit port
+EXPOSE 8501
+
+CMD ["streamlit", "run", "app.py"]
+{% elif ui_framework == "gradio" -%}
+# Expose Gradio port
+EXPOSE 7860
+
+CMD ["python", "app.py"]
+{% elif ui_framework == "fastapi" -%}
+# Expose FastAPI port
+EXPOSE 8000
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+{% else -%}
+CMD ["python", "-m", "src.rag_pipeline"]
+{% endif -%}

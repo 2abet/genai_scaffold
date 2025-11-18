@@ -1,0 +1,158 @@
+"""Gradio app for {{ project_name }}."""
+
+import gradio as gr
+{% if orchestrator != "none" -%}
+from src.rag_pipeline import RAGPipeline
+{% else -%}
+from src.llm import LLMClient
+from src.vector_store import VectorStore
+from src.prompts import load_prompt
+{% endif %}
+from src.utils import get_logger
+
+logger = get_logger(__name__)
+
+# Initialize components
+{% if orchestrator != "none" -%}
+pipeline = RAGPipeline()
+{% else -%}
+llm_client = LLMClient()
+vector_store = VectorStore()
+{% endif %}
+
+def chat(message, history):
+    """Chat function for Gradio interface.
+    
+    Args:
+        message: User message
+        history: Chat history
+        
+    Returns:
+        Response message
+    """
+    try:
+{% if orchestrator != "none" -%}
+        response = pipeline.query(message)
+{% else -%}
+        # Retrieve context
+        results = vector_store.search(message, k=3)
+        context = "\n\n".join([r["content"] for r in results]) if results else "No relevant context found."
+        
+        # Generate response
+        full_prompt = load_prompt("rag_query", context=context, question=message)
+        response = llm_client.generate(full_prompt)
+{% endif %}
+        return response
+    except Exception as e:
+        logger.error(f"Error in chat: {e}", exc_info=True)
+        return f"Error: {str(e)}"
+
+def add_document(file):
+    """Add a document to the knowledge base.
+    
+    Args:
+        file: Uploaded file object
+        
+    Returns:
+        Status message
+    """
+    try:
+        if file is None:
+            return "No file uploaded"
+        
+        content = open(file.name, 'r').read()
+        chunks = [chunk.strip() for chunk in content.split('\n\n') if chunk.strip()]
+        
+{% if orchestrator != "none" -%}
+        pipeline.add_documents(chunks)
+{% else -%}
+        vector_store.add_documents(chunks)
+{% endif %}
+        
+        return f"✅ Added {len(chunks)} chunks to knowledge base"
+    except Exception as e:
+        logger.error(f"Error adding document: {e}", exc_info=True)
+        return f"❌ Error: {str(e)}"
+
+def add_text(text):
+    """Add text to the knowledge base.
+    
+    Args:
+        text: Text to add
+        
+    Returns:
+        Status message
+    """
+    try:
+        if not text or not text.strip():
+            return "No text provided"
+        
+{% if orchestrator != "none" -%}
+        pipeline.add_documents([text])
+{% else -%}
+        vector_store.add_documents([text])
+{% endif %}
+        
+        return "✅ Text added to knowledge base"
+    except Exception as e:
+        logger.error(f"Error adding text: {e}", exc_info=True)
+        return f"❌ Error: {str(e)}"
+
+# Create Gradio interface
+with gr.Blocks(title="{{ project_name }}", theme=gr.themes.Soft()) as demo:
+    gr.Markdown("# 🤖 {{ project_name }}")
+    gr.Markdown("*Powered by {{ llm_provider }} and {{ vector_db }}*")
+    
+    with gr.Tab("💬 Chat"):
+        chatbot = gr.ChatInterface(
+            chat,
+            chatbot=gr.Chatbot(height=500),
+            textbox=gr.Textbox(placeholder="Ask me anything...", container=False, scale=7),
+            title=None,
+            retry_btn="🔄 Retry",
+            undo_btn="↩️ Undo",
+            clear_btn="🗑️ Clear",
+        )
+    
+    with gr.Tab("📚 Knowledge Base"):
+        gr.Markdown("### Add Documents to Knowledge Base")
+        
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("#### Upload File")
+                file_input = gr.File(label="Upload text file", file_types=['.txt'])
+                file_btn = gr.Button("Add Document", variant="primary")
+                file_output = gr.Textbox(label="Status", interactive=False)
+                
+                file_btn.click(fn=add_document, inputs=file_input, outputs=file_output)
+            
+            with gr.Column():
+                gr.Markdown("#### Add Text Manually")
+                text_input = gr.Textbox(label="Enter text", lines=5)
+                text_btn = gr.Button("Add Text", variant="primary")
+                text_output = gr.Textbox(label="Status", interactive=False)
+                
+                text_btn.click(fn=add_text, inputs=text_input, outputs=text_output)
+    
+    with gr.Tab("ℹ️ About"):
+        gr.Markdown(f"""
+        ## About {{ project_name }}
+        
+        This application is a Retrieval-Augmented Generation (RAG) system built with:
+        
+        - **LLM Provider:** {{ llm_provider }}
+        - **Orchestrator:** {{ orchestrator }}
+        - **Vector Database:** {{ vector_db }}
+        - **UI Framework:** Gradio
+        
+        ### How to use:
+        
+        1. **Add Knowledge:** Go to the "Knowledge Base" tab to upload documents or add text
+        2. **Chat:** Use the "Chat" tab to ask questions based on your knowledge base
+        3. **Enjoy:** Get AI-powered responses augmented with your custom knowledge!
+        
+        Built with [genai-scaffold](https://github.com/2abet/genai_scaffold)
+        """)
+
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)

@@ -1,0 +1,120 @@
+"""Streamlit app for {{ project_name }}."""
+
+import streamlit as st
+{% if orchestrator != "none" -%}
+from src.rag_pipeline import RAGPipeline
+{% else -%}
+from src.llm import LLMClient
+from src.vector_store import VectorStore
+from src.prompts import load_prompt
+{% endif %}
+from src.utils import get_logger
+
+logger = get_logger(__name__)
+
+# Page config
+st.set_page_config(
+    page_title="{{ project_name }}",
+    page_icon="🤖",
+    layout="wide"
+)
+
+# Title
+st.title("🤖 {{ project_name }}")
+st.markdown("*Powered by {{ llm_provider }} and {{ vector_db }}*")
+
+# Initialize session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "pipeline" not in st.session_state:
+{% if orchestrator != "none" -%}
+    st.session_state.pipeline = RAGPipeline()
+{% else -%}
+    st.session_state.llm_client = LLMClient()
+    st.session_state.vector_store = VectorStore()
+{% endif %}
+
+# Sidebar
+with st.sidebar:
+    st.header("⚙️ Settings")
+    
+    # Document upload
+    st.subheader("📄 Add Documents")
+    uploaded_file = st.file_uploader("Upload a text file", type=['txt'])
+    
+    if uploaded_file is not None:
+        content = uploaded_file.read().decode('utf-8')
+        if st.button("Add to Knowledge Base"):
+            # Split into chunks (simple split by paragraphs)
+            chunks = [chunk.strip() for chunk in content.split('\n\n') if chunk.strip()]
+{% if orchestrator != "none" -%}
+            st.session_state.pipeline.add_documents(chunks)
+{% else -%}
+            st.session_state.vector_store.add_documents(chunks)
+{% endif %}
+            st.success(f"Added {len(chunks)} chunks to knowledge base!")
+    
+    # Manual text input
+    st.subheader("✍️ Add Text Manually")
+    manual_text = st.text_area("Enter text to add to knowledge base")
+    if st.button("Add Text") and manual_text:
+{% if orchestrator != "none" -%}
+        st.session_state.pipeline.add_documents([manual_text])
+{% else -%}
+        st.session_state.vector_store.add_documents([manual_text])
+{% endif %}
+        st.success("Text added to knowledge base!")
+    
+    # Clear conversation
+    if st.button("🗑️ Clear Conversation"):
+        st.session_state.messages = []
+        st.rerun()
+
+# Main chat interface
+st.header("💬 Chat")
+
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Chat input
+if prompt := st.chat_input("Ask me anything..."):
+    # Add user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    # Generate response
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            try:
+{% if orchestrator != "none" -%}
+                response = st.session_state.pipeline.query(prompt)
+{% else -%}
+                # Retrieve context
+                results = st.session_state.vector_store.search(prompt, k=3)
+                context = "\n\n".join([r["content"] for r in results]) if results else "No relevant context found."
+                
+                # Generate response
+                full_prompt = load_prompt("rag_query", context=context, question=prompt)
+                response = st.session_state.llm_client.generate(full_prompt)
+{% endif %}
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            except Exception as e:
+                error_msg = f"Error: {str(e)}"
+                st.error(error_msg)
+                logger.error(error_msg, exc_info=True)
+
+# Footer
+st.markdown("---")
+st.markdown(
+    """
+    <div style='text-align: center'>
+        <small>Built with genai-scaffold | {{ llm_provider }} + {{ orchestrator }} + {{ vector_db }}</small>
+    </div>
+    """,
+    unsafe_allow_html=True
+)

@@ -1,0 +1,250 @@
+"""Vector store implementation for {{ vector_db }}."""
+
+from typing import List, Dict, Any, Optional
+{% if use_chromadb -%}
+import chromadb
+from chromadb.config import Settings
+{% endif -%}
+{% if use_pinecone -%}
+from pinecone import Pinecone, ServerlessSpec
+{% endif -%}
+{% if use_qdrant -%}
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
+{% endif -%}
+{% if use_pgvector -%}
+import psycopg2
+from pgvector.psycopg2 import register_vector
+{% endif %}
+
+from .config import Config
+from .llm import LLMClient
+
+
+class VectorStore:
+    """Vector store for semantic search using {{ vector_db }}."""
+    
+    def __init__(self):
+        """Initialize the vector store."""
+{% if use_chromadb -%}
+        self.client = chromadb.HttpClient(
+            host=Config.CHROMA_HOST,
+            port=Config.CHROMA_PORT
+        )
+        self.collection = self.client.get_or_create_collection(
+            name=Config.CHROMA_COLLECTION_NAME
+        )
+{% endif -%}
+{% if use_pinecone -%}
+        pc = Pinecone(api_key=Config.PINECONE_API_KEY)
+        
+        # Create index if it doesn't exist
+        if Config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
+            pc.create_index(
+                name=Config.PINECONE_INDEX_NAME,
+                dimension=1536,  # Adjust based on your embedding model
+                metric='cosine',
+                spec=ServerlessSpec(
+                    cloud='aws',
+                    region=Config.PINECONE_ENVIRONMENT
+                )
+            )
+        
+        self.index = pc.Index(Config.PINECONE_INDEX_NAME)
+{% endif -%}
+{% if use_qdrant -%}
+        self.client = QdrantClient(
+            url=Config.QDRANT_URL,
+            api_key=Config.QDRANT_API_KEY
+        )
+        
+        # Create collection if it doesn't exist
+        collections = self.client.get_collections().collections
+        if Config.QDRANT_COLLECTION_NAME not in [c.name for c in collections]:
+            self.client.create_collection(
+                collection_name=Config.QDRANT_COLLECTION_NAME,
+                vectors_config=VectorParams(size=1536, distance=Distance.COSINE)
+            )
+{% endif -%}
+{% if use_pgvector -%}
+        self.conn = psycopg2.connect(
+            host=Config.POSTGRES_HOST,
+            port=Config.POSTGRES_PORT,
+            database=Config.POSTGRES_DB,
+            user=Config.POSTGRES_USER,
+            password=Config.POSTGRES_PASSWORD
+        )
+        register_vector(self.conn)
+        self._create_table()
+{% endif %}
+        
+        # LLM client for embeddings
+        self.llm_client = LLMClient()
+    
+{% if use_pgvector -%}
+    def _create_table(self):
+        """Create the vectors table if it doesn't exist."""
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                CREATE EXTENSION IF NOT EXISTS vector;
+                
+                CREATE TABLE IF NOT EXISTS embeddings (
+                    id SERIAL PRIMARY KEY,
+                    content TEXT,
+                    embedding vector(1536),
+                    metadata JSONB
+                );
+                
+                CREATE INDEX IF NOT EXISTS embeddings_idx 
+                ON embeddings USING ivfflat (embedding vector_cosine_ops);
+            """)
+            self.conn.commit()
+{% endif %}
+    
+    def add_documents(
+        self,
+        documents: List[str],
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+        ids: Optional[List[str]] = None
+    ) -> None:
+        """Add documents to the vector store.
+        
+        Args:
+            documents: List of text documents
+            metadatas: Optional metadata for each document
+            ids: Optional IDs for each document
+        """
+        # Generate embeddings
+        embeddings = [self.llm_client.embed(doc) for doc in documents]
+        
+        if metadatas is None:
+            metadatas = [{}] * len(documents)
+        
+        if ids is None:
+            ids = [f"doc_{i}" for i in range(len(documents))]
+        
+{% if use_chromadb -%}
+        self.collection.add(
+            documents=documents,
+            embeddings=embeddings,
+            metadatas=metadatas,
+            ids=ids
+        )
+{% endif -%}
+{% if use_pinecone -%}
+        vectors = [
+            (ids[i], embeddings[i], metadatas[i])
+            for i in range(len(documents))
+        ]
+        self.index.upsert(vectors=vectors)
+{% endif -%}
+{% if use_qdrant -%}
+        points = [
+            PointStruct(
+                id=i,
+                vector=embeddings[i],
+                payload={"content": documents[i], **metadatas[i]}
+            )
+            for i in range(len(documents))
+        ]
+        self.client.upsert(
+            collection_name=Config.QDRANT_COLLECTION_NAME,
+            points=points
+        )
+{% endif -%}
+{% if use_pgvector -%}
+        with self.conn.cursor() as cur:
+            for i, (doc, emb, meta) in enumerate(zip(documents, embeddings, metadatas)):
+                cur.execute(
+                    "INSERT INTO embeddings (content, embedding, metadata) VALUES (%s, %s, %s)",
+                    (doc, emb, meta)
+                )
+            self.conn.commit()
+{% endif %}
+    
+    def search(
+        self,
+        query: str,
+        k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Search for similar documents.
+        
+        Args:
+            query: Query text
+            k: Number of results to return
+            
+        Returns:
+            List of search results with content and metadata
+        """
+        # Generate query embedding
+        query_embedding = self.llm_client.embed(query)
+        
+{% if use_chromadb -%}
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=k
+        )
+        
+        return [
+            {
+                "content": results['documents'][0][i],
+                "metadata": results['metadatas'][0][i],
+                "score": results['distances'][0][i]
+            }
+            for i in range(len(results['documents'][0]))
+        ]
+{% endif -%}
+{% if use_pinecone -%}
+        results = self.index.query(
+            vector=query_embedding,
+            top_k=k,
+            include_metadata=True
+        )
+        
+        return [
+            {
+                "content": match['metadata'].get('content', ''),
+                "metadata": match['metadata'],
+                "score": match['score']
+            }
+            for match in results['matches']
+        ]
+{% endif -%}
+{% if use_qdrant -%}
+        results = self.client.search(
+            collection_name=Config.QDRANT_COLLECTION_NAME,
+            query_vector=query_embedding,
+            limit=k
+        )
+        
+        return [
+            {
+                "content": hit.payload.get('content', ''),
+                "metadata": {k: v for k, v in hit.payload.items() if k != 'content'},
+                "score": hit.score
+            }
+            for hit in results
+        ]
+{% endif -%}
+{% if use_pgvector -%}
+        with self.conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT content, metadata, 1 - (embedding <=> %s) as score
+                FROM embeddings
+                ORDER BY embedding <=> %s
+                LIMIT %s
+                """,
+                (query_embedding, query_embedding, k)
+            )
+            results = cur.fetchall()
+        
+        return [
+            {
+                "content": row[0],
+                "metadata": row[1],
+                "score": row[2]
+            }
+            for row in results
+        ]
+{% endif %}

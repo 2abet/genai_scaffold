@@ -1,0 +1,129 @@
+"""Configuration management for {{ project_name }}."""
+
+import os
+from pathlib import Path
+from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+
+class Config:
+    """Application configuration."""
+    
+    # Project
+    PROJECT_NAME = "{{ project_name }}"
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+    
+    # Paths
+    BASE_DIR = Path(__file__).parent.parent
+    DATA_DIR = BASE_DIR / "data"
+    CACHE_DIR = DATA_DIR / "cache"
+    OUTPUTS_DIR = DATA_DIR / "outputs"
+    EMBEDDINGS_DIR = DATA_DIR / "embeddings"
+    
+{% if use_openai -%}
+    # OpenAI Configuration
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
+{% endif -%}
+{% if use_anthropic -%}
+    # Anthropic Configuration
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
+{% endif -%}
+{% if use_azure -%}
+    # Azure OpenAI Configuration
+    AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+    AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+    AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01")
+{% endif -%}
+{% if use_ollama -%}
+    # Ollama Configuration
+    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
+{% endif %}
+    
+{% if use_pinecone -%}
+    # Pinecone Configuration
+    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
+    PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "{{ project_name }}-index")
+{% endif -%}
+{% if use_chromadb -%}
+    # ChromaDB Configuration
+    CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+    CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+    CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "{{ project_name }}_collection")
+{% endif -%}
+{% if use_qdrant -%}
+    # Qdrant Configuration
+    QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+    QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+    QDRANT_COLLECTION_NAME = os.getenv("QDRANT_COLLECTION_NAME", "{{ project_name }}_collection")
+{% endif -%}
+{% if use_pgvector -%}
+    # PostgreSQL Configuration
+    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "{{ project_name }}")
+    POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
+{% endif %}
+    
+{% if use_langsmith -%}
+    # LangSmith Configuration
+    LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
+    LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
+    LANGCHAIN_PROJECT = os.getenv("LANGCHAIN_PROJECT", "{{ project_name }}")
+{% endif -%}
+{% if use_wandb -%}
+    # Weights & Biases Configuration
+    WANDB_API_KEY = os.getenv("WANDB_API_KEY")
+    WANDB_PROJECT = os.getenv("WANDB_PROJECT", "{{ project_name }}")
+    WANDB_ENTITY = os.getenv("WANDB_ENTITY")
+{% endif %}
+    
+    @classmethod
+    def validate(cls) -> None:
+        """Validate required configuration."""
+        errors = []
+        
+{% if use_openai -%}
+        if not cls.OPENAI_API_KEY:
+            errors.append("OPENAI_API_KEY is required")
+{% endif -%}
+{% if use_anthropic -%}
+        if not cls.ANTHROPIC_API_KEY:
+            errors.append("ANTHROPIC_API_KEY is required")
+{% endif -%}
+{% if use_azure -%}
+        if not cls.AZURE_OPENAI_API_KEY:
+            errors.append("AZURE_OPENAI_API_KEY is required")
+        if not cls.AZURE_OPENAI_ENDPOINT:
+            errors.append("AZURE_OPENAI_ENDPOINT is required")
+{% endif -%}
+{% if use_pinecone -%}
+        if not cls.PINECONE_API_KEY:
+            errors.append("PINECONE_API_KEY is required")
+{% endif -%}
+{% if use_langsmith -%}
+        if cls.LANGCHAIN_TRACING_V2 and not cls.LANGCHAIN_API_KEY:
+            errors.append("LANGCHAIN_API_KEY is required when tracing is enabled")
+{% endif %}
+        
+        if errors:
+            raise ValueError(f"Configuration errors: {', '.join(errors)}")
+    
+    @classmethod
+    def ensure_directories(cls) -> None:
+        """Ensure required directories exist."""
+        for directory in [cls.CACHE_DIR, cls.OUTPUTS_DIR, cls.EMBEDDINGS_DIR]:
+            directory.mkdir(parents=True, exist_ok=True)
+
+
+# Initialize directories
+Config.ensure_directories()

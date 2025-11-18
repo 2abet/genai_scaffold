@@ -1,0 +1,59 @@
+"""Observability and tracing configuration."""
+
+{% if use_langsmith -%}
+import os
+from functools import wraps
+from langsmith import traceable
+
+# LangSmith is automatically configured via environment variables
+# LANGCHAIN_TRACING_V2, LANGCHAIN_API_KEY, LANGCHAIN_PROJECT
+
+def trace_llm_call(func):
+    """Decorator to trace LLM calls with LangSmith."""
+    @traceable(name=func.__name__)
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+{% elif use_wandb -%}
+import wandb
+from functools import wraps
+from ..config import Config
+
+# Initialize W&B
+wandb.init(
+    project=Config.WANDB_PROJECT,
+    entity=Config.WANDB_ENTITY,
+    config={
+        "llm_provider": Config.LLM_PROVIDER,
+        "environment": Config.ENVIRONMENT
+    }
+)
+
+def trace_llm_call(func):
+    """Decorator to log LLM calls to W&B."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Log the call
+        with wandb.init(reinit=True):
+            result = func(*args, **kwargs)
+            wandb.log({
+                "function": func.__name__,
+                "args": str(args),
+                "kwargs": str(kwargs)
+            })
+        return result
+    return wrapper
+
+{% else -%}
+from functools import wraps
+
+def trace_llm_call(func):
+    """No-op decorator when observability is disabled."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+{% endif -%}

@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Data
+data/cache/*
+!data/cache/.gitkeep
+data/outputs/*
+!data/outputs/.gitkeep
+data/embeddings/*
+!data/embeddings/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+{% if enable_docker -%}
+# Docker
+.dockerignore
+{% endif -%}
+
+{% if use_poetry -%}
+# Poetry
+poetry.lock
+{% endif -%}
