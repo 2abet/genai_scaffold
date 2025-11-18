@@ -10,8 +10,7 @@ services:
       - chroma_data:/chroma/chroma
     environment:
       - IS_PERSISTENT=TRUE
-{% endif %}
-
+{% endif -%}
 {% if use_qdrant -%}
   qdrant:
     image: qdrant/qdrant:latest
@@ -20,8 +19,7 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-{% endif %}
-
+{% endif -%}
 {% if use_pgvector -%}
   postgres:
     image: pgvector/pgvector:pg16
@@ -33,7 +31,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-{% endif %}
+{% endif -%}
 
   app:
     build: .
